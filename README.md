@@ -1,30 +1,191 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/zeit/next.js/tree/canary/packages/create-next-app).
+## Useful NestJS Tips:
+### **[Create Next.js App](https://nextjs.org/learn/basics/create-nextjs-app)**
+* Automatically uses Hot Reloading (similiar to nodemon).
+* Automatically creates routes using the 'tree' in pages (similar to react-router).
+  * I.E. './pages/index.js' would be 'http://localhost:3000/'.
+  * I.E. './pages/posts/first-post.js' would be 'http://localhost:3000/posts/first-post'.
 
-## Getting Started
+### **[Navigate Between Pages](https://nextjs.org/learn/basics/navigate-between-pages)**
+* Automatically uses:
+  * Client-Side Navigation: 
+    * Loads other components in the app using Javascript (faster than default navigation done by browser)
+  * Code Splitting: 
+    * Only loading the request pages assets and nothing more.
+  * Prefetching (In Production):
+    * The only exception to Code-Splitting being any 'Linked' components, which are preloaded to increase navigation speed.
+  * Example Link Code, with className, target and rel:
+    ```
+    <Link href="/">
+      <a className="foo" target="_blank" rel="noopener noreferrer">
+        Hello World
+      </a>
+    </Link>
+    ```
 
-First, run the development server:
+### **[Assests Metadata and CSS](https://nextjs.org/learn/basics/assets-metadata-css)**
+* Assets: 
+  * The './public' directory houses and serves:
+    * Static Assets (like images).
+    * 'robots.txt'
+    * Google Site Verification
+    * etc.
+* Metadata (SEO):
+  * Metadata is traditionally stored in `<head></head>`, however next.js has a special, built in component called `<Head></Head>` that can be imported and used on each component we build.
+    ```
+    import Head from 'next/head'
+    <Head>
+      <title>Create Next App</title>
+      <link rel="icon" href="/favicon.ico" />
+    </Head>
+    ```
+    * A [Custom Document](https://nextjs.org/docs/advanced-features/custom-document) can still be made if needed.
+* Layout (A shared design element across all components/pages):
+  * Housed in ./components, Layout can be imported into any or all pages and components to add a base level of styling.
+  * I.E.
+    ```
+    import Head from 'next/head'
+    import Link from 'next/link'
+    import Layout from '../../components/layout'
 
-```bash
-npm run dev
-# or
-yarn dev
-```
+    export default function FirstPost() {
+      return (
+        <Layout>
+          <Head>
+            <title>First Post</title>
+            <link rel="icon" href="/favicon.ico" />
+          </Head>
+          <h1>First Post</h1>
+          <h2>
+            <Link href="/">
+              <a>Back to home </a>
+            </Link>
+          </h2>
+        </Layout>
+      )
+    }
+    ```
+* CSS
+  * CSS Modules
+    * CSS Modules automatically generate unique class names insuring that you will never have name collisions.
+    * Next.js's Code Splitting also works with CSS Modules, allowing for even faster load times.
+    * Best practices are to store ALL CSS Modules in the same directory as the files that import them, OR store them in one location elsewhere.
+    * To make a CSS file a module, just specify it: `example.module.css`.
+    * Example Layout.js:
+      ```
+      import styles from './layout.module.css'
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+      export default function Layout({ children }) {
+        return <div className={styles.container}>{children}</div>
+      }
+      ```
+    * Example Layout.module.css:
+      ```
+      .container {
+        max-width: 36rem;
+        padding: 0 1rem;
+        margin: 3rem auto 6rem;
+      }
+      ```
+    * 
+  * Global CSS Styles:
+    * Next.js supports a global file called `_app.js` to implement specific CSS styles on **every page**.
+    * Create `_app.js` under ./pages with the following code:
+      ```
+      import '../styles/global.css'
 
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
+      export default function App({ Component, pageProps }) {
+        return <Component {...pageProps} />
+      }
+      ```
+    * Create a directory called styles under root
+    * Inside ./styles create `global.css`. Example base:
+      ```
+      html,
+      body {
+        padding: 0;
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu,
+          Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+        line-height: 1.6;
+        font-size: 18px;
+      }
 
-## Learn More
+      * {
+        box-sizing: border-box;
+      }
 
-To learn more about Next.js, take a look at the following resources:
+      a {
+        color: #0070f3;
+        text-decoration: none;
+      }
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+      a:hover {
+        text-decoration: underline;
+      }
 
-You can check out [the Next.js GitHub repository](https://github.com/zeit/next.js/) - your feedback and contributions are welcome!
+      img {
+        max-width: 100%;
+        display: block;
+      }
+      ```
+    * If the development server was running, restart it and the changes should now be live.
 
-## Deploy on Vercel
+### **[Data Fetching](https://nextjs.org/learn/basics/data-fetching)**
+* Blog posts in Markdown usually contain some information at the top called 'front-matter'. This information can be parsed using a package called 'gray-matter'
+  * `npm install gray-matter`
+* Pre-Rendering: 
+  * `getStaticProps()` [Docs](https://nextjs.org/docs/basic-features/data-fetching#getstaticprops-static-generation)
+  * Obtains information available in the filetree ahead of time and then pre-renders the page.
+  * *Note - 'getStaticProps' runs on every request in development mode, but **only** at build time in production.*
+* Server-Side Rendering:
+  * `getServerSideProps()` [Docs](https://nextjs.org/docs/basic-features/data-fetching#getserversideprops-server-side-rendering)
+  * Cannot be pre-rendered as its requests **must** be run on every request. (Not Recommened)
+* Client-Side Rendering:
+  * Statically Pre-Renders parts of the page that do not require external data.
+  * On page load, fetches external data using Javascript to populate the remainging parts.
+  * Great for User Dashboards, etc.
+* SWR (stale-while-revalidate)
+  * React Hooks for Remote Data Fetching [Docs](https://swr.now.sh/)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/import?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### **[Dynamic Routes](https://nextjs.org/learn/basics/dynamic-routes)**
+* Creating a file in pages with [] means its a Next.js Dynamic Page. I.E. `[id].js`.
+* 
+* 
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+### **[API Routes](https://nextjs.org/learn/basics/api-routes)**
+* 
+* 
+* 
+
+### **[___](___)**
+* 
+* 
+* 
+
+### **[___](___)**
+* 
+* 
+* 
+
+### **[___](___)**
+* 
+* 
+* 
+
+### **[___](___)**
+* 
+* 
+* 
+
+### **[___](___)**
+* 
+* 
+* 
+
+### 
+* `npm init next-app nextjs-blog`
+* Start development server with `npm run dev`
+* 
+* 
+* 
+* 
